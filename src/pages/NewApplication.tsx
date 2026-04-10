@@ -8,16 +8,11 @@ import { Label } from '@/components/ui/label'
 import {
   ArrowLeft,
   Building,
-  Briefcase,
-  Users,
-  Globe,
-  Link,
   Calendar,
   FileText,
   Upload,
   Sparkles
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { applicationStorage } from '@/lib/storage'
 import { Application, ApplicationStatus } from '@/types'
 

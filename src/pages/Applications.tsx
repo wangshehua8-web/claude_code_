@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -31,10 +31,13 @@ const Applications = () => {
     { status: '已投递', label: '已投递', color: 'bg-stone-100 text-stone-800' },
     { status: '简历筛选中', label: '筛选中', color: 'bg-blue-100 text-blue-800' },
     { status: '笔试邀请', label: '笔试', color: 'bg-purple-100 text-purple-800' },
-    { status: '面试邀请', label: '面试', color: 'bg-indigo-100 text-indigo-800' },
+    { status: '一面邀请', label: '一面', color: 'bg-indigo-100 text-indigo-800' },
+    { status: '二面邀请', label: '二面', color: 'bg-indigo-100 text-indigo-800' },
+    { status: '三面邀请', label: '三面', color: 'bg-indigo-100 text-indigo-800' },
     { status: 'HR面', label: 'HR面', color: 'bg-orange-100 text-orange-800' },
     { status: 'Offer', label: 'Offer', color: 'bg-emerald-100 text-emerald-800' },
     { status: '已拒绝', label: '已结束', color: 'bg-rose-100 text-rose-800' },
+    { status: '已放弃', label: '已放弃', color: 'bg-stone-100 text-stone-500' },
   ]
 
   // 按状态分组

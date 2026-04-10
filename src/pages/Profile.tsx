@@ -11,7 +11,6 @@ import {
   Download,
   Copy,
   CheckCircle,
-  Plus,
   FolderOpen
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -110,7 +109,7 @@ const Profile = () => {
   }
 
   // 设置默认简历
-  const handleSetDefault = (id: string) => {
+  const handleSetDefault = (_id: string) => {
     // 这里可以添加设置默认简历的逻辑
     alert('已设置为默认简历')
   }

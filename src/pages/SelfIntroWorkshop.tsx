@@ -7,10 +7,8 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import {
   ArrowLeft,
-  User,
   FileText,
   Target,
-  Clock,
   Sparkles,
   CheckCircle,
   RotateCcw,
