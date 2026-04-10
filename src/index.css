@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 33% 98%; /* 暖白/纸张色背景，根据PRD: stone-50 或 orange-50/30 */
+    --foreground: 20 14% 10%;
+
+    --card: 0 0% 100%; /* 卡片背景使用 white，根据PRD */
+    --card-foreground: 20 14% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14% 10%;
+
+    /* 主色调：鼠尾草绿（teal-500 / emerald-400），这里使用 teal */
+    --primary: 173 80% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 24 100% 50%; /* 落日橘作为辅助色 */
+    --secondary-foreground: 0 0% 100%;
+
+    /* 危险/拒绝状态：柔和的珊瑚红（rose-400） */
+    --destructive: 350 89% 65%;
+    --destructive-foreground: 0 0% 100%;
+
+    --muted: 24 10% 90%;
+    --muted-foreground: 20 14% 40%;
+
+    --accent: 24 100% 96%;
+    --accent-foreground: 24 100% 30%;
+
+    --border: 20 14% 85%;
+    --input: 20 14% 85%;
+    --ring: 173 80% 40%;
+
+    --radius: 0.75rem; /* 大圆角，根据PRD: rounded-xl / rounded-2xl */
+  }
+
+  .dark {
+    --background: 20 14% 4%;
+    --foreground: 60 9% 98%;
+
+    --card: 20 14% 6%;
+    --card-foreground: 60 9% 98%;
+
+    --popover: 20 14% 6%;
+    --popover-foreground: 60 9% 98%;
+
+    --primary: 173 80% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 24 100% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --destructive: 350 89% 65%;
+    --destructive-foreground: 0 0% 100%;
+
+    --muted: 20 14% 15%;
+    --muted-foreground: 24 5% 64%;
+
+    --accent: 20 14% 15%;
+    --accent-foreground: 60 9% 98%;
+
+    --border: 20 14% 20%;
+    --input: 20 14% 20%;
+    --ring: 173 80% 40%;
+  }
+}
+
+@layer base {
+  .border-border {
+    border-color: hsl(var(--border));
+  }
+
+  .bg-background {
+    background-color: hsl(var(--background));
+  }
+
+  .text-foreground {
+    color: hsl(var(--foreground));
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* 全局使用大圆角，根据PRD: rounded-xl / rounded-2xl */
+  .rounded-card {
+    @apply rounded-2xl;
+  }
+
+  /* 弥散阴影，根据PRD: shadow-sm shadow-stone-200/50 */
+  .shadow-soft {
+    @apply shadow-sm shadow-stone-200/50;
+  }
+
+  /* 禁用纯白和冷灰，使用暖白背景 */
+  .bg-paper {
+    @apply bg-stone-50;
+  }
+}
+
+@layer utilities {
+  /* 段落文字使用深灰色，根据PRD: text-stone-600 */
+  .text-paragraph {
+    @apply text-stone-600;
+  }
+
+  /* 增加行高 */
+  .leading-relaxed {
+    line-height: 1.75;
+  }
+}
