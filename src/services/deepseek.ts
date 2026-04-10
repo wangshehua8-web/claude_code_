@@ -368,3 +368,62 @@ ${draftText}
     }
   }>(response)
 }
+
+/**
+ * 解析岗位JD内容，提取结构化信息
+ * 专门针对暑期实习JD宽泛的特点进行优化
+ */
+export async function parseJobDescription(
+  jdContent: string,
+  url?: string,
+  title?: string
+): Promise<{
+  company: string;
+  position: string;
+  department: string;
+  responsibilities: string[];
+  requirements: string[];
+  summary: string;
+  confidence: number;
+}> {
+  const systemPrompt = `你是一位专业的招聘专家，擅长从岗位描述中提取结构化信息。
+请严格按照 JSON 格式返回，不要输出任何其他内容。
+
+特别注意：
+1. 暑期实习的JD通常比较宽泛，请尽量提取具体信息
+2. 如果信息不明确，可以合理推断或留空
+3. 职责和要求要分开提取
+4. 公司、岗位、业务线信息优先从标题和内容中提取
+
+返回格式：
+{
+  "company": "公司名称（如：字节跳动）",
+  "position": "岗位名称（如：产品经理实习生）",
+  "department": "业务线/部门（如：抖音电商）",
+  "responsibilities": ["职责1", "职责2", "职责3"],
+  "requirements": ["要求1", "要求2", "要求3"],
+  "summary": "JD内容摘要（2-3句话）",
+  "confidence": 0.8 // 解析置信度 0-1
+}`;
+
+  const userMessage = `请解析以下岗位描述：
+
+【URL】${url || '无'}
+【标题】${title || '无'}
+
+【JD内容】
+${jdContent}
+
+请提取结构化信息，特别注意暑期实习JD通常比较宽泛，请尽量提取具体信息。`;
+
+  const response = await callDeepSeek(systemPrompt, userMessage, 2000);
+  return parseAIJson<{
+    company: string;
+    position: string;
+    department: string;
+    responsibilities: string[];
+    requirements: string[];
+    summary: string;
+    confidence: number;
+  }>(response);
+}

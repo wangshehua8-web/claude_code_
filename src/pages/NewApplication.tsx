@@ -11,14 +11,22 @@ import {
   Calendar,
   FileText,
   Upload,
-  Sparkles
+  Sparkles,
+  Loader2,
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react'
 import { applicationStorage } from '@/lib/storage'
 import { Application, ApplicationStatus } from '@/types'
+import { extractWebContent, isValidUrl, inferChannelFromUrl, extractCompanyFromTitle, extractPositionFromTitle } from '@/services/jina'
+import { parseJobDescription } from '@/services/deepseek'
 
 const NewApplication = () => {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isParsing, setIsParsing] = useState(false)
+  const [parseError, setParseError] = useState('')
+  const [parseSuccess, setParseSuccess] = useState(false)
 
   // 表单状态
   const [formData, setFormData] = useState<Partial<Application>>({
@@ -56,6 +64,65 @@ const NewApplication = () => {
   // 处理表单变化
   const handleChange = (field: keyof Application, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  // 解析JD链接
+  const handleParseJD = async () => {
+    if (!formData.jdUrl?.trim()) {
+      setParseError('请输入JD链接')
+      return
+    }
+
+    if (!isValidUrl(formData.jdUrl)) {
+      setParseError('请输入有效的URL格式 (http:// 或 https://)')
+      return
+    }
+
+    setIsParsing(true)
+    setParseError('')
+    setParseSuccess(false)
+
+    try {
+      // 步骤1: 提取网页内容
+      const { content, title } = await extractWebContent(formData.jdUrl)
+
+      // 步骤2: 从URL推断渠道
+      const inferredChannel = inferChannelFromUrl(formData.jdUrl)
+
+      // 步骤3: 尝试从标题提取基本信息
+      const extractedCompany = extractCompanyFromTitle(title || '')
+      const extractedPosition = extractPositionFromTitle(title || '')
+
+      // 步骤4: 使用AI解析JD内容
+      const parsedResult = await parseJobDescription(content, formData.jdUrl, title)
+
+      // 步骤5: 更新表单数据
+      setFormData(prev => ({
+        ...prev,
+        company: extractedCompany || parsedResult.company || prev.company,
+        position: extractedPosition || parsedResult.position || prev.position,
+        department: parsedResult.department || prev.department,
+        channel: inferredChannel !== '其他' ? inferredChannel : prev.channel,
+        jdText: [
+          `【岗位职责】`,
+          ...parsedResult.responsibilities.map(r => `• ${r}`),
+          `\n【任职要求】`,
+          ...parsedResult.requirements.map(r => `• ${r}`),
+          `\n【摘要】${parsedResult.summary}`
+        ].join('\n')
+      }))
+
+      setParseSuccess(true)
+
+      // 自动滚动到顶部显示成功消息
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+
+    } catch (error) {
+      console.error('解析JD失败:', error)
+      setParseError(`解析失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    } finally {
+      setIsParsing(false)
+    }
   }
 
   // 提交表单
@@ -119,6 +186,46 @@ const NewApplication = () => {
           <p className="text-stone-600 mt-2">记录新的岗位投递，开始追踪求职进度</p>
         </div>
       </div>
+
+      {/* 解析状态提示 */}
+      {parseError && (
+        <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-xl">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-500 flex-shrink-0" />
+            <p className="text-rose-700">{parseError}</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setParseError('')}
+              className="ml-auto text-rose-600 hover:bg-rose-100"
+            >
+              关闭
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {parseSuccess && (
+        <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <div className="flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+            <div>
+              <p className="text-emerald-700 font-medium">解析成功！</p>
+              <p className="text-emerald-600 text-sm mt-1">
+                已自动填充公司、岗位等信息，请检查并编辑
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setParseSuccess(false)}
+              className="ml-auto text-emerald-600 hover:bg-emerald-100"
+            >
+              关闭
+            </Button>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -225,10 +332,15 @@ const NewApplication = () => {
                       type="button"
                       variant="outline"
                       className="rounded-xl"
-                      disabled={!formData.jdUrl}
+                      disabled={!formData.jdUrl || isParsing}
+                      onClick={handleParseJD}
                     >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      AI 解析
+                      {isParsing ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 mr-2" />
+                      )}
+                      {isParsing ? '解析中...' : 'AI 解析'}
                     </Button>
                   </div>
                   <p className="text-sm text-stone-500 mt-1">

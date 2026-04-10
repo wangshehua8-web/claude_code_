@@ -15,10 +15,14 @@ import {
   HelpCircle,
   Save,
   Eye,
-  EyeOff
+  EyeOff,
+  Mail,
+  Plus
 } from 'lucide-react'
-import { apiKeyStorage } from '@/lib/storage'
+import { apiKeyStorage, emailConfigStorage } from '@/lib/storage'
+import { EmailConfigForm } from '@/components/EmailConfigForm'
 import { cn } from '@/lib/utils'
+import type { EmailAccount } from '@/types'
 
 const Settings = () => {
   const [apiKey, setApiKey] = useState('')
@@ -29,6 +33,9 @@ const Settings = () => {
     deadlineAlert: true,
     weeklySummary: false,
   })
+  const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([])
+  const [showEmailForm, setShowEmailForm] = useState(false)
+  const [editingAccount, setEditingAccount] = useState<EmailAccount | null>(null)
 
   // 加载保存的 API Key
   useEffect(() => {
@@ -36,6 +43,12 @@ const Settings = () => {
     if (savedApiKey) {
       setApiKey(savedApiKey)
     }
+  }, [])
+
+  // 加载邮箱账户
+  useEffect(() => {
+    const accounts = emailConfigStorage.getAll()
+    setEmailAccounts(accounts)
   }, [])
 
   // 保存 API Key
@@ -68,6 +81,48 @@ const Settings = () => {
       alert('所有数据已清空，页面即将刷新')
       window.location.reload()
     }
+  }
+
+  // 邮箱账户相关函数
+  const handleSaveEmailAccount = (account: EmailAccount) => {
+    const accounts = emailConfigStorage.getAll()
+    const index = accounts.findIndex(a => a.id === account.id)
+    if (index >= 0) {
+      accounts[index] = account
+    } else {
+      accounts.push(account)
+    }
+    emailConfigStorage.save(account)
+    setEmailAccounts(accounts)
+    setShowEmailForm(false)
+    setEditingAccount(null)
+  }
+
+  const handleEditEmailAccount = (account: EmailAccount) => {
+    setEditingAccount(account)
+    setShowEmailForm(true)
+  }
+
+  const handleDeleteEmailAccount = (id: string) => {
+    if (confirm('确定要删除此邮箱账户吗？')) {
+      emailConfigStorage.delete(id)
+      const accounts = emailConfigStorage.getAll()
+      setEmailAccounts(accounts)
+      if (editingAccount?.id === id) {
+        setEditingAccount(null)
+        setShowEmailForm(false)
+      }
+    }
+  }
+
+  const handleAddEmailAccount = () => {
+    setEditingAccount(null)
+    setShowEmailForm(true)
+  }
+
+  const handleCancelEmailForm = () => {
+    setShowEmailForm(false)
+    setEditingAccount(null)
   }
 
   return (
@@ -159,6 +214,105 @@ const Settings = () => {
                   </Button>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* 邮箱配置 */}
+          <Card className="rounded-2xl">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Mail className="w-5 h-5 mr-2 text-sage-600" />
+                邮箱监控配置
+              </CardTitle>
+              <CardDescription>
+                配置邮箱账户以自动监控面试邀请邮件
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {showEmailForm ? (
+                <EmailConfigForm
+                  account={editingAccount || undefined}
+                  onSave={handleSaveEmailAccount}
+                  onCancel={handleCancelEmailForm}
+                  onDelete={editingAccount ? handleDeleteEmailAccount : undefined}
+                />
+              ) : (
+                <>
+                  {/* 邮箱账户列表 */}
+                  {emailAccounts.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {emailAccounts.map((account) => (
+                          <div
+                            key={account.id}
+                            className="border border-stone-200 rounded-xl p-4 hover:border-sage-300 transition-colors"
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className="font-medium text-stone-800">{account.name}</h4>
+                                <p className="text-sm text-stone-500 mt-1">{account.config.email}</p>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <span className={`px-2 py-1 rounded-full text-xs ${account.status === 'active' ? 'bg-emerald-100 text-emerald-800' : account.status === 'error' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'}`}>
+                                    {account.status === 'active' ? '运行中' : account.status === 'error' ? '错误' : '未启用'}
+                                  </span>
+                                  <span className="text-xs text-stone-500">
+                                    轮询间隔：{account.config.pollingInterval}分钟
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditEmailAccount(account)}
+                                  className="text-sage-600 hover:text-sage-700"
+                                >
+                                  编辑
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteEmailAccount(account.id)}
+                                  className="text-rose-600 hover:text-rose-700"
+                                >
+                                  删除
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="mt-3 text-xs text-stone-500">
+                              <p>最后检查：{account.lastChecked ? new Date(account.lastChecked).toLocaleString() : '从未检查'}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-t border-stone-200 pt-4">
+                        <Button
+                          onClick={handleAddEmailAccount}
+                          className="rounded-xl bg-sage-500 hover:bg-sage-600"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          添加邮箱账户
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Mail className="w-12 h-12 text-stone-300 mx-auto mb-4" />
+                      <h3 className="font-medium text-stone-700 mb-2">尚未配置邮箱账户</h3>
+                      <p className="text-sm text-stone-500 mb-6">
+                        配置邮箱账户后，JobReady 会自动监控面试邀请邮件并更新面试时间
+                      </p>
+                      <Button
+                        onClick={handleAddEmailAccount}
+                        className="rounded-xl bg-sage-500 hover:bg-sage-600"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        添加邮箱账户
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
 

@@ -125,6 +125,52 @@ export interface IntroFeedback {
   }
 }
 
+// 邮件解析相关类型
+export interface EmailParseResult {
+  company?: string;      // 公司名称
+  position?: string;     // 岗位名称
+  interviewTime?: string; // 面试时间 (ISO格式)
+  interviewLink?: string; // 面试链接 (Zoom/Teams/腾讯会议等)
+  interviewer?: string;   // 面试官
+  round?: string;        // 面试轮次 (一面、二面等)
+  location?: string;     // 面试地点 (线上/线下)
+  notes?: string;        // 特别说明
+}
+
+// 邮箱配置类型
+export interface EmailConfig {
+  email: string;          // 邮箱地址
+  password: string;       // 授权码 (加密存储)
+  provider: 'qq' | '163' | 'gmail' | 'outlook';
+  imapConfig: {
+    host: string;         // imap.qq.com
+    port: number;         // 993
+    tls: boolean;         // true
+  };
+  enabled: boolean;
+  pollingInterval: number; // 轮询间隔(分钟)
+  keywords: string[];     // 面试邀请关键词
+}
+
+export interface EmailAccount {
+  id: string;
+  name: string;           // 账户显示名称
+  config: EmailConfig;
+  lastChecked: string;    // 最后检查时间 ISO
+  status: 'active' | 'inactive' | 'error';
+}
+
+// 邮件检查结果
+export interface EmailCheckResult {
+  messageId: string;
+  subject: string;
+  from: string;
+  date: string;
+  content: string;        // 邮件内容前500字符
+  parsedInfo?: EmailParseResult;
+  isInterview: boolean;
+}
+
 // localStorage 键名规范
 export const STORAGE_KEYS = {
   RESUMES: 'jobready_resumes',
@@ -133,4 +179,8 @@ export const STORAGE_KEYS = {
   MOCK_ANSWERS: 'jobready_mock_answers',
   SELF_INTROS: 'jobready_self_intros',
   DEEPSEEK_API_KEY: 'jobready_deepseek_api_key',
+
+  // 邮箱集成相关
+  EMAIL_CONFIGS: 'jobready_email_configs',
+  PROCESSED_EMAILS: 'jobready_processed_emails',
 } as const

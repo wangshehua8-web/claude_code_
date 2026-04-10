@@ -1,10 +1,12 @@
 import { STORAGE_KEYS } from '@/types'
+import { SimpleEncryption } from '@/utils/encryption'
 import type {
   Resume,
   Application,
   InterviewExperience,
   MockAnswer,
-  SelfIntro
+  SelfIntro,
+  EmailAccount
 } from '@/types'
 
 // 通用存储函数
@@ -291,5 +293,116 @@ export const apiKeyStorage = {
 
   has(): boolean {
     return !!this.get()
+  }
+}
+
+// 邮箱配置存储管理
+export const emailConfigStorage = {
+  // 获取所有邮箱账户
+  getAll(): EmailAccount[] {
+    try {
+      const configs = LocalStorageManager.getItem(STORAGE_KEYS.EMAIL_CONFIGS, []);
+      // 注意：这里返回的是加密后的配置，密码字段已加密
+      return configs;
+    } catch (error) {
+      console.error('Error reading email configs:', error);
+      return [];
+    }
+  },
+
+  // 获取解密后的邮箱账户（密码已解密）
+  getAllDecrypted(): EmailAccount[] {
+    const configs = this.getAll();
+
+    return configs.map(config => ({
+      ...config,
+      config: {
+        ...config.config,
+        password: SimpleEncryption.decrypt(config.config.password)
+      }
+    }));
+  },
+
+  // 根据ID获取邮箱账户
+  getById(id: string): EmailAccount | undefined {
+    const accounts = this.getAll();
+    return accounts.find(account => account.id === id);
+  },
+
+  // 保存邮箱账户（自动加密密码）
+  save(account: EmailAccount): void {
+    // SimpleEncryption已通过顶部导入
+    const accounts = this.getAll();
+
+    // 加密密码
+    const encryptedAccount: EmailAccount = {
+      ...account,
+      config: {
+        ...account.config,
+        password: SimpleEncryption.encrypt(account.config.password)
+      }
+    };
+
+    const index = accounts.findIndex(a => a.id === account.id);
+
+    if (index >= 0) {
+      accounts[index] = encryptedAccount;
+    } else {
+      accounts.push(encryptedAccount);
+    }
+
+    LocalStorageManager.setItem(STORAGE_KEYS.EMAIL_CONFIGS, accounts);
+  },
+
+  // 更新邮箱账户
+  update(id: string, updates: Partial<EmailAccount>): void {
+    const account = this.getById(id);
+    if (!account) return;
+
+    const updatedAccount: EmailAccount = {
+      ...account,
+      ...updates,
+      id // 确保ID不变
+    };
+
+    this.save(updatedAccount);
+  },
+
+  // 更新最后检查时间
+  updateLastChecked(id: string): void {
+    const account = this.getById(id);
+    if (!account) return;
+
+    this.update(id, {
+      lastChecked: new Date().toISOString()
+    });
+  },
+
+  // 更新账户状态
+  updateStatus(id: string, status: 'active' | 'inactive' | 'error'): void {
+    this.update(id, { status });
+  },
+
+  // 删除邮箱账户
+  delete(id: string): void {
+    const accounts = this.getAll();
+    const filtered = accounts.filter(account => account.id !== id);
+    LocalStorageManager.setItem(STORAGE_KEYS.EMAIL_CONFIGS, filtered);
+  },
+
+  // 检查是否已配置邮箱
+  hasAccounts(): boolean {
+    return this.getAll().length > 0;
+  },
+
+  // 获取启用的邮箱账户
+  getEnabledAccounts(): EmailAccount[] {
+    const accounts = this.getAll();
+    return accounts.filter(account => account.config.enabled);
+  },
+
+  // 清除所有邮箱配置
+  clearAll(): void {
+    LocalStorageManager.setItem(STORAGE_KEYS.EMAIL_CONFIGS, []);
   }
 }

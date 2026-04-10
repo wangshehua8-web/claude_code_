@@ -185,3 +185,97 @@ export function cleanWebContent(content: string, maxLength: number = 5000): stri
 
   return cleaned;
 }
+
+/**
+ * 从URL推断投递渠道
+ */
+export function inferChannelFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+
+    if (hostname.includes('nowcoder.com')) {
+      return '牛客网';
+    } else if (hostname.includes('zhipin.com')) {
+      return 'Boss直聘';
+    } else if (hostname.includes('lagou.com')) {
+      return '拉勾网';
+    } else if (hostname.includes('liepin.com')) {
+      return '猎聘';
+    } else if (hostname.includes('51job.com')) {
+      return '前程无忧';
+    }
+
+    // 检查是否是公司官网
+    const commonDomains = ['.com', '.cn', '.com.cn', '.net', '.org'];
+    const isLikelyCompanySite = commonDomains.some(domain => hostname.endsWith(domain));
+
+    if (isLikelyCompanySite && !hostname.includes('job') && !hostname.includes('career')) {
+      return '官网';
+    }
+
+    return '其他';
+  } catch (_) {
+    return '其他';
+  }
+}
+
+/**
+ * 从标题中提取公司名称
+ */
+export function extractCompanyFromTitle(title: string): string {
+  if (!title) return '';
+
+  // 常见公司名称模式
+  const companyPatterns = [
+    /(字节跳动|ByteDance)/i,
+    /(腾讯|Tencent)/i,
+    /(阿里巴巴|Alibaba)/i,
+    /(百度|Baidu)/i,
+    /(美团|Meituan)/i,
+    /(拼多多|Pinduoduo)/i,
+    /(京东|JD\.com)/i,
+    /(网易|NetEase)/i,
+    /(小米|Xiaomi)/i,
+    /(华为|Huawei)/i,
+  ];
+
+  for (const pattern of companyPatterns) {
+    const match = title.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+
+  return '';
+}
+
+/**
+ * 从标题中提取岗位名称
+ */
+export function extractPositionFromTitle(title: string): string {
+  if (!title) return '';
+
+  // 常见实习岗位模式
+  const positionPatterns = [
+    /(产品经理|产品助理|产品实习生)/i,
+    /(软件开发|软件工程师|开发实习生)/i,
+    /(前端开发|前端工程师)/i,
+    /(后端开发|后端工程师)/i,
+    /(算法工程师|算法实习生)/i,
+    /(数据分析|数据科学家)/i,
+    /(运营实习生|运营专员)/i,
+    /(市场实习生|市场营销)/i,
+    /(设计实习生|UI设计师)/i,
+    /(测试工程师|测试实习生)/i,
+  ];
+
+  for (const pattern of positionPatterns) {
+    const match = title.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+
+  return '';
+}
